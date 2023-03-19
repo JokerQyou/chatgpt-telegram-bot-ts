@@ -1,7 +1,7 @@
 import type TelegramBot from 'node-telegram-bot-api';
-import type {ChatGPT} from '../api';
-import {BotOptions} from '../types';
-import {logWithTime} from '../utils';
+import type { ChatGPT } from '../api';
+import { BotOptions } from '../types';
+import { logWithTime } from '../utils';
 
 class CommandHandler {
   debug: number;
@@ -40,15 +40,14 @@ class CommandHandler {
       case '/help':
         await this._bot.sendMessage(
           msg.chat.id,
-          'To chat with me, you can:\n' +
-            '  • send messages directly (not supported in groups)\n' +
-            `  • send messages that start with ${this._opts.chatCmd}\n` +
-            '  • reply to my last message\n\n' +
-            'Command list:\n' +
-            `(When using a command in a group, make sure to include a mention after the command, like /help@${botUsername}).\n` +
-            '  • /help Show help information.\n' +
-            '  • /reset Reset the current chat thread and start a new one.\n' +
-            '  • /reload (admin required) Refresh the ChatGPT session.'
+          '您可以:\n' +
+          '  • 直接发送消息（仅支持私聊）\n' +
+          `  • 发送以 ${this._opts.chatCmd} 命令开头的消息\n` +
+          '  • 回复我的上一条消息\n\n' +
+          '支持的命令:\n' +
+          `（在群聊中使用命令需要加上at，例如 /help@${botUsername}）\n` +
+          '  • /help 显示帮助\n' +
+          '  • /reset 重置当前对话，开始新对话\n'
         );
         break;
 
@@ -57,36 +56,19 @@ class CommandHandler {
         await this._api.resetThread();
         await this._bot.sendMessage(
           msg.chat.id,
-          '🔄 The chat thread has been reset. New chat thread started.'
+          '🔄 对话已重置。可开始新对话。'
         );
         logWithTime(`🔄 Chat thread reset by ${userInfo}.`);
-        break;
-
-      case '/reload':
-        if (this._opts.userIds.indexOf(msg.from?.id ?? 0) == -1) {
-          await this._bot.sendMessage(
-            msg.chat.id,
-            '⛔️ Sorry, you do not have the permission to run this command.'
-          );
-          logWithTime(
-            `⚠️ Permission denied for "${command}" from ${userInfo}.`
-          );
-        } else {
-          await this._bot.sendChatAction(msg.chat.id, 'typing');
-          await this._api.refreshSession();
-          await this._bot.sendMessage(msg.chat.id, '🔄 Session refreshed.');
-          logWithTime(`🔄 Session refreshed by ${userInfo}.`);
-        }
         break;
 
       default:
         await this._bot.sendMessage(
           msg.chat.id,
-          '⚠️ Unsupported command. Run /help to see the usage.'
+          '⚠️ 不支持此命令。使用 /help 查看帮助。'
         );
         break;
     }
   };
 }
 
-export {CommandHandler};
+export { CommandHandler };

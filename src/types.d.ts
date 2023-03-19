@@ -1,4 +1,4 @@
-import type {openai, FetchFn} from 'chatgpt';
+import type { openai, FetchFn } from 'chatgpt';
 
 export interface BotOptions {
   token: string;
@@ -45,15 +45,14 @@ export interface APIUnofficialOptions {
 }
 
 export interface APIOptions {
-  type: 'browser' | 'official' | 'unofficial';
-  browser?: APIBrowserOptions;
+  type: 'official' | 'unofficial';
   official?: APIOfficialOptions;
   unofficial?: APIUnofficialOptions;
 }
 
 export interface Config {
   debug: number;
-  bot: BotOptions;
-  api: APIOptions;
+  telegram: BotOptions;
+  chatgpt: APIOptions;
   proxy?: string;
 }

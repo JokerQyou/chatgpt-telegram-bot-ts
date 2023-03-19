@@ -1,22 +1,22 @@
 import TelegramBot from 'node-telegram-bot-api';
-import {ChatGPT} from './api';
-import {MessageHandler} from './handlers/message';
-import {loadConfig} from './utils';
+import { ChatGPT } from './api';
+import { MessageHandler } from './handlers/message';
+import { loadConfig } from './utils';
 
 async function main() {
   const opts = loadConfig();
 
   // Initialize ChatGPT API.
-  const api = new ChatGPT(opts.api);
+  const api = new ChatGPT(opts.chatgpt);
   await api.init();
 
   // Initialize Telegram Bot and message handler.
-  const bot = new TelegramBot(opts.bot.token, {
+  const bot = new TelegramBot(opts.telegram.token, {
     polling: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    request: {proxy: opts.proxy} as any,
+    request: { proxy: opts.proxy } as any,
   });
-  const messageHandler = new MessageHandler(bot, api, opts.bot, opts.debug);
+  const messageHandler = new MessageHandler(bot, api, opts.telegram, opts.debug);
   await messageHandler.init();
 
   bot.on('message', messageHandler.handle);

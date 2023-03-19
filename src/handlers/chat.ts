@@ -1,11 +1,10 @@
-import type {ChatMessage as ChatResponseV4} from 'chatgpt';
-import type {ChatResponse as ChatResponseV3} from 'chatgpt-v3';
+import type { ChatMessage as ChatResponseV4 } from 'chatgpt';
 import _ from 'lodash';
 import type TelegramBot from 'node-telegram-bot-api';
 import telegramifyMarkdown from 'telegramify-markdown';
-import type {ChatGPT} from '../api';
-import {BotOptions} from '../types';
-import {logWithTime} from '../utils';
+import type { ChatGPT } from '../api';
+import { BotOptions } from '../types';
+import { logWithTime } from '../utils';
 import Queue from 'promise-queue';
 
 class ChatHandler {
@@ -54,7 +53,7 @@ class ChatHandler {
       this._n_queued;
 
     await this._bot.editMessageText(
-      this._n_queued > 0 ? `⌛: You are #${this._n_queued} in line.` : '🤔',
+      this._n_queued > 0 ? `⌛: 排队中（第${this._n_queued}位）` : '🤔',
       {
         chat_id: chatId,
         message_id: reply.message_id,
@@ -76,22 +75,16 @@ class ChatHandler {
       const res = await this._api.sendMessage(
         text,
         _.throttle(
-          async (partialResponse: ChatResponseV3 | ChatResponseV4) => {
-            const resText =
-              this._api.apiType == 'browser'
-                ? (partialResponse as ChatResponseV3).response
-                : (partialResponse as ChatResponseV4).text;
+          async (partialResponse: ChatResponseV4) => {
+            const resText = (partialResponse as ChatResponseV4).text;
             reply = await this._editMessage(reply, resText);
             await this._bot.sendChatAction(chatId, 'typing');
           },
           3000,
-          {leading: true, trailing: false}
+          { leading: true, trailing: false }
         )
       );
-      const resText =
-        this._api.apiType == 'browser'
-          ? (res as ChatResponseV3).response
-          : (res as ChatResponseV4).text;
+      const resText = (res as ChatResponseV4).text;
       await this._editMessage(reply, resText);
 
       if (this.debug >= 1) logWithTime(`📨 Response:\n${resText}`);
@@ -99,7 +92,7 @@ class ChatHandler {
       logWithTime('⛔️ ChatGPT API error:', (err as Error).message);
       this._bot.sendMessage(
         chatId,
-        "⚠️ Sorry, I'm having trouble connecting to the server, please try again later."
+        "⚠️ ChatGPT 接口错误，请稍后重试。"
       );
     }
 
@@ -144,7 +137,7 @@ class ChatHandler {
   protected _parseQueueKey = (key: string) => {
     const [chat_id, message_id] = key.split(':');
 
-    return {chat_id, message_id};
+    return { chat_id, message_id };
   };
 
   protected _updateQueue = async (chatId: number, messageId: number) => {
@@ -154,12 +147,12 @@ class ChatHandler {
     else this._n_pending--;
 
     for (const key in this._positionInQueue) {
-      const {chat_id, message_id} = this._parseQueueKey(key);
+      const { chat_id, message_id } = this._parseQueueKey(key);
       this._positionInQueue[key]--;
       this._updatePositionQueue.add(() => {
         return this._bot.editMessageText(
           this._positionInQueue[key] > 0
-            ? `⌛: You are #${this._positionInQueue[key]} in line.`
+            ? `⌛: 排队中（第${this._positionInQueue[key]}位）`
             : '🤔',
           {
             chat_id,
@@ -171,4 +164,4 @@ class ChatHandler {
   };
 }
 
-export {ChatHandler};
+export { ChatHandler };
