@@ -1,5 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { ChatGPT } from './api';
+import { BingChatApi } from './bing_chat';
 import { MessageHandler } from './handlers/message';
 import { loadConfig } from './utils';
 
@@ -9,6 +10,8 @@ async function main() {
   // Initialize ChatGPT API.
   const api = new ChatGPT(opts.chatgpt);
   await api.init();
+  const bingApi = new BingChatApi(opts.bingchat);
+  await bingApi.init();
 
   // Initialize Telegram Bot and message handler.
   const bot = new TelegramBot(opts.telegram.token, {
@@ -16,7 +19,7 @@ async function main() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     request: { proxy: opts.proxy } as any,
   });
-  const messageHandler = new MessageHandler(bot, api, opts.telegram, opts.debug);
+  const messageHandler = new MessageHandler(bot, api, bingApi, opts.telegram, opts.debug);
   await messageHandler.init();
 
   bot.on('message', messageHandler.handle);

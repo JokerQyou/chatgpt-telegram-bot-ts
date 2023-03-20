@@ -2,9 +2,11 @@ import { JSONFile, Low } from 'lowdb';
 import type TelegramBot from 'node-telegram-bot-api';
 import { join } from 'path';
 import type { ChatGPT } from '../api';
+import { BingChatApi } from '../bing_chat';
 import { BotOptions, UsageData } from '../types';
 import { logWithTime } from '../utils';
 import { Authenticator } from './authentication';
+import { BingChatHandler } from './bing';
 import { ChatHandler } from './chat';
 import { CommandHandler } from './command';
 
@@ -16,10 +18,12 @@ class MessageHandler {
   protected _api: ChatGPT;
   protected _authenticator: Authenticator;
   protected _commandHandler: CommandHandler;
+  protected _bingChatApi: BingChatApi;
   protected _chatHandler: ChatHandler;
+  protected _bingHandler: BingChatHandler;
   protected _db: Low<UsageData>;
 
-  constructor(bot: TelegramBot, api: ChatGPT, botOpts: BotOptions, debug = 1) {
+  constructor(bot: TelegramBot, api: ChatGPT, bingChatApi: BingChatApi, botOpts: BotOptions, debug = 1) {
     this.debug = debug;
     this._bot = bot;
     this._api = api;
@@ -27,6 +31,8 @@ class MessageHandler {
     this._authenticator = new Authenticator(bot, botOpts, debug);
     this._commandHandler = new CommandHandler(bot, api, botOpts, debug);
     this._chatHandler = new ChatHandler(bot, api, botOpts, debug);
+    this._bingChatApi = bingChatApi;
+    this._bingHandler = new BingChatHandler(bot, bingChatApi, botOpts, debug);
     const adapter = new JSONFile<UsageData>(join(process.cwd(), 'config', 'usage.json'));
     this._db = new Low<UsageData>(adapter);
   }
@@ -48,14 +54,17 @@ class MessageHandler {
 
     // Parse message.
     const { text, command, isMentioned } = this._parseMessage(msg);
-    if (command != '' && command != this._opts.chatCmd) {
-      // For commands except `${chatCmd}`, pass the request to commandHandler.
-      await this._commandHandler.handle(
-        msg,
-        command,
-        isMentioned,
-        this._botUsername
-      );
+    if (command !== '') {
+      if (command === this._opts.bingCmd) {
+        await this._bingHandler.handle(msg, text);
+      } else {
+        await this._commandHandler.handle(
+          msg,
+          command,
+          isMentioned,
+          this._botUsername,
+        )
+      }
     } else {
       // Handles:
       // - direct messages in private chats

@@ -63,6 +63,8 @@ function loadConfig(): Config {
     throw new RangeError('Invalid API type');
   }
 
+  const enableBingChat = tryGet<boolean>('bingchat.enable') ||
+    tryGet<string>('bingchat.cookie') !== '';
   const cfg = {
     debug: tryGet<number>('debug') || 1,
     telegram: {
@@ -77,6 +79,10 @@ function loadConfig(): Config {
       type: apiType,
       official: apiOfficialCfg,
       unofficial: apiUnofficialCfg,
+    },
+    bingchat: {
+      enable: enableBingChat,
+      cookie: tryGet<string>('bingchat.cookie') || '',
     },
     proxy: proxy,
   };

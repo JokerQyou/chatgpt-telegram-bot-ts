@@ -53,7 +53,8 @@ class CommandHandler {
           '支持的命令:\n' +
           `（在群聊中使用命令需要加上at，例如 /help@${botUsername}）\n` +
           '  • /help 显示帮助\n' +
-          '  • /reset 重置当前对话，开始新对话\n'
+          '  • /reset 重置当前对话，开始新对话\n' +
+          '  • /usage 查看用量'
         );
         break;
 

@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@dqbd/tiktoken": "^1.0.2",
+    "bing-chat": "^0.2.3",
     "chatgpt": "^5.1.1",
     "config": "^3.3.9",
     "dotenv": "^16.0.3",

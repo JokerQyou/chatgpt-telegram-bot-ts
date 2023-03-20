@@ -5,6 +5,7 @@ export interface BotOptions {
   userIds: number[];
   groupIds: number[];
   chatCmd: string;
+  bingCmd: string;
 }
 
 export interface APIBrowserOptions {
@@ -50,10 +51,15 @@ export interface APIOptions {
   unofficial?: APIUnofficialOptions;
 }
 
+export interface BingChatOptions {
+  cookie: string
+}
+
 export interface Config {
   debug: number;
   telegram: BotOptions;
   chatgpt: APIOptions;
+  bingchat: BingChatOptions;
   proxy?: string;
 }
 
