@@ -56,3 +56,14 @@ export interface Config {
   chatgpt: APIOptions;
   proxy?: string;
 }
+
+export type UsageData = {
+  [key: number]: {
+    chatgpt: {
+      updated: number // Unix epoch
+      dailyTokens: number
+      monthlyTokens: number
+      totalTokens: number
+    }
+  }
+}

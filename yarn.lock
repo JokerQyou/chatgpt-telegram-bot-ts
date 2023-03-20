@@ -1833,6 +1833,13 @@ longest-streak@^3.0.0:
   resolved "https://registry.yarnpkg.com/longest-streak/-/longest-streak-3.1.0.tgz#62fa67cd958742a1574af9f39866364102d90cd4"
   integrity sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==
 
+lowdb@^4.0.0:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/lowdb/-/lowdb-4.0.1.tgz#9a7a12cfe00e2f1bf937ab385b2b8b6f5db54162"
+  integrity sha512-tbOSxMEjBzKH3d8Ma3uJH6EfA/mITpyjN+8dikG292prSZCIV0SeacieMpQuK43ewANNSHOFofgND834aFsMkA==
+  dependencies:
+    steno "^3.0.0"
+
 lru-cache@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-6.0.0.tgz#6d6fe6570ebd96aaf90fcad1dafa3b2566db3a94"
@@ -2928,6 +2935,11 @@ stealthy-require@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/stealthy-require/-/stealthy-require-1.1.1.tgz#35b09875b4ff49f26a777e509b3090a3226bf24b"
   integrity sha512-ZnWpYnYugiOVEY5GkcuJK1io5V8QmNYChG62gSit9pQVGErXtrKuPC55ITaVSukmMta5qpMU7vqLt2Lnni4f/g==
+
+steno@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/steno/-/steno-3.0.0.tgz#212a11e8ef3646b610efc8953842f556fd0df28f"
+  integrity sha512-uZtn7Ht9yXLiYgOsmo8btj4+f7VxyYheMt8g6F1ANjyqByQXEE2Gygjgenp3otHH1TlHsS4JAaRGv5wJ1wvMNw==
 
 stream-combiner@~0.0.4:
   version "0.0.4"

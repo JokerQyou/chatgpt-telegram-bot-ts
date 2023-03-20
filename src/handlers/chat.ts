@@ -1,11 +1,14 @@
 import type { ChatMessage as ChatResponseV4 } from 'chatgpt';
-import _ from 'lodash';
+import _, { chain } from 'lodash';
 import type TelegramBot from 'node-telegram-bot-api';
 import telegramifyMarkdown from 'telegramify-markdown';
 import type { ChatGPT } from '../api';
-import { BotOptions } from '../types';
+import { BotOptions, UsageData } from '../types';
 import { logWithTime } from '../utils';
 import Queue from 'promise-queue';
+import { JSONFile, Low } from 'lowdb';
+import { encoding_for_model, Tiktoken } from '@dqbd/tiktoken';
+import { join } from 'path';
 
 class ChatHandler {
   debug: number;
@@ -17,12 +20,19 @@ class ChatHandler {
   protected _apiRequestsQueue = new Queue(1, Infinity);
   protected _positionInQueue: Record<string, number> = {};
   protected _updatePositionQueue = new Queue(20, Infinity);
+  protected _enc: Tiktoken;
+  protected _db?: Low<UsageData>;
 
   constructor(bot: TelegramBot, api: ChatGPT, botOpts: BotOptions, debug = 1) {
     this.debug = debug;
     this._bot = bot;
     this._api = api;
     this._opts = botOpts;
+    this._enc = encoding_for_model('gpt-3.5-turbo');
+  }
+
+  init = async (db: Low<UsageData>) => {
+    this._db = db;
   }
 
   handle = async (msg: TelegramBot.Message, text: string) => {
@@ -85,6 +95,41 @@ class ChatHandler {
         )
       );
       const resText = (res as ChatResponseV4).text;
+
+      let tokenCount = 0;
+      tokenCount += this._enc.encode(text, 'all').length;
+      tokenCount += this._enc.encode(resText, 'all').length;
+      const now = new Date();
+      // Store token count
+      if (!(chatId in this._db!.data!)) {
+        this._db!.data![chatId] = {
+          chatgpt: {
+            updated: now.getTime() / 1000.0,
+            dailyTokens: tokenCount,
+            monthlyTokens: tokenCount,
+            totalTokens: tokenCount,
+          }
+        }
+      } else {
+        const updated = new Date((this._db!.data![chatId].chatgpt.updated || 0) * 1000.0);
+        // same day
+        if (updated.getUTCMonth() === now.getUTCMonth() && updated.getUTCDate() === now.getUTCDate()) {
+          this._db!.data![chatId].chatgpt.dailyTokens += tokenCount;
+          this._db!.data![chatId].chatgpt.monthlyTokens += tokenCount;
+        } else {
+          this._db!.data![chatId].chatgpt.dailyTokens = tokenCount;
+          // next day
+          if (updated.getUTCMonth() === now.getUTCMonth()) {
+            this._db!.data![chatId].chatgpt.monthlyTokens += tokenCount;
+          } else { // next month
+            this._db!.data![chatId].chatgpt.monthlyTokens = tokenCount;
+          }
+        }
+        this._db!.data![chatId].chatgpt.totalTokens += tokenCount;
+        this._db!.data![chatId].chatgpt.updated = now.getTime() / 1000.0;
+      }
+      await this._db!.write()
+
       await this._editMessage(reply, resText);
 
       if (this.debug >= 1) logWithTime(`📨 Response:\n${resText}`);

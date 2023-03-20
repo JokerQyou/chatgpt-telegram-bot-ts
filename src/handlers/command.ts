@@ -1,6 +1,7 @@
+import { Low } from 'lowdb/lib';
 import type TelegramBot from 'node-telegram-bot-api';
 import type { ChatGPT } from '../api';
-import { BotOptions } from '../types';
+import { BotOptions, UsageData } from '../types';
 import { logWithTime } from '../utils';
 
 class CommandHandler {
@@ -8,12 +9,17 @@ class CommandHandler {
   protected _opts: BotOptions;
   protected _bot: TelegramBot;
   protected _api: ChatGPT;
+  protected _db?: Low<UsageData>;
 
   constructor(bot: TelegramBot, api: ChatGPT, botOpts: BotOptions, debug = 1) {
     this.debug = debug;
     this._bot = bot;
     this._api = api;
     this._opts = botOpts;
+  }
+
+  init = async (db: Low<UsageData>) => {
+    this._db = db;
   }
 
   handle = async (
@@ -59,6 +65,29 @@ class CommandHandler {
           '🔄 对话已重置。可开始新对话。'
         );
         logWithTime(`🔄 Chat thread reset by ${userInfo}.`);
+        break;
+
+      case '/usage':
+        const price = 0.002; // per 1000 tokens
+        const pricingUnit = 1000; // 1000 tokens
+        const chatId = msg.chat.id;
+        const dailyTokens = this._db?.data![chatId].chatgpt.dailyTokens;
+        const monthlyTokens = this._db?.data![chatId].chatgpt.monthlyTokens;
+        const totalTokens = this._db?.data![chatId].chatgpt.totalTokens;
+        await this._bot.sendMessage(
+          msg.chat.id,
+          `今日:\n` +
+          `使用了 ${dailyTokens} 文本 token\n` +
+          `💰花费 $${((dailyTokens || 0) * price / pricingUnit).toFixed(2)}\n` +
+          `\n------------\n\n` +
+          `本月:\n` +
+          `使用了 ${monthlyTokens} 文本 token\n` +
+          `💰花费 $${((monthlyTokens || 0) * price / pricingUnit).toFixed(2)}\n` +
+          `\n------------\n\n` +
+          `累计:\n` +
+          `使用了 ${totalTokens} 文本 token\n` +
+          `💰花费 $${((totalTokens || 0) * price / pricingUnit).toFixed(2)}`,
+        )
         break;
 
       default:

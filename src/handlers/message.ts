@@ -1,10 +1,12 @@
+import { JSONFile, Low } from 'lowdb';
 import type TelegramBot from 'node-telegram-bot-api';
-import type {ChatGPT} from '../api';
-import {BotOptions} from '../types';
-import {logWithTime} from '../utils';
-import {Authenticator} from './authentication';
-import {ChatHandler} from './chat';
-import {CommandHandler} from './command';
+import { join } from 'path';
+import type { ChatGPT } from '../api';
+import { BotOptions, UsageData } from '../types';
+import { logWithTime } from '../utils';
+import { Authenticator } from './authentication';
+import { ChatHandler } from './chat';
+import { CommandHandler } from './command';
 
 class MessageHandler {
   debug: number;
@@ -15,6 +17,7 @@ class MessageHandler {
   protected _authenticator: Authenticator;
   protected _commandHandler: CommandHandler;
   protected _chatHandler: ChatHandler;
+  protected _db: Low<UsageData>;
 
   constructor(bot: TelegramBot, api: ChatGPT, botOpts: BotOptions, debug = 1) {
     this.debug = debug;
@@ -24,10 +27,16 @@ class MessageHandler {
     this._authenticator = new Authenticator(bot, botOpts, debug);
     this._commandHandler = new CommandHandler(bot, api, botOpts, debug);
     this._chatHandler = new ChatHandler(bot, api, botOpts, debug);
+    const adapter = new JSONFile<UsageData>(join(process.cwd(), 'config', 'usage.json'));
+    this._db = new Low<UsageData>(adapter);
   }
 
   init = async () => {
     this._botUsername = (await this._bot.getMe()).username ?? '';
+    await this._db.read()
+    this._db.data ||= {} as UsageData
+    await this._chatHandler.init(this._db)
+    await this._commandHandler.init(this._db)
     logWithTime(`🤖 Bot @${this._botUsername} has started...`);
   };
 
@@ -38,7 +47,7 @@ class MessageHandler {
     if (!(await this._authenticator.authenticate(msg))) return;
 
     // Parse message.
-    const {text, command, isMentioned} = this._parseMessage(msg);
+    const { text, command, isMentioned } = this._parseMessage(msg);
     if (command != '' && command != this._opts.chatCmd) {
       // For commands except `${chatCmd}`, pass the request to commandHandler.
       await this._commandHandler.handle(
@@ -73,8 +82,8 @@ class MessageHandler {
         }
       }
     }
-    return {text, command, isMentioned};
+    return { text, command, isMentioned };
   };
 }
 
-export {MessageHandler};
+export { MessageHandler };
