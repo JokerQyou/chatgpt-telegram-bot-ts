@@ -1,6 +1,7 @@
 import { Low } from 'lowdb/lib';
 import type TelegramBot from 'node-telegram-bot-api';
 import type { ChatGPT } from '../api';
+import { BingChatApi } from '../bing_chat';
 import { BotOptions, UsageData } from '../types';
 import { logWithTime } from '../utils';
 
@@ -9,12 +10,14 @@ class CommandHandler {
   protected _opts: BotOptions;
   protected _bot: TelegramBot;
   protected _api: ChatGPT;
+  protected _bingApi: BingChatApi;
   protected _db?: Low<UsageData>;
 
-  constructor(bot: TelegramBot, api: ChatGPT, botOpts: BotOptions, debug = 1) {
+  constructor(bot: TelegramBot, api: ChatGPT, bingApi: BingChatApi, botOpts: BotOptions, debug = 1) {
     this.debug = debug;
     this._bot = bot;
     this._api = api;
+    this._bingApi = bingApi;
     this._opts = botOpts;
   }
 
@@ -53,7 +56,8 @@ class CommandHandler {
           '支持的命令:\n' +
           `（在群聊中使用命令需要加上at，例如 /help@${botUsername}）\n` +
           '  • /help 显示帮助\n' +
-          '  • /reset 重置当前对话，开始新对话\n' +
+          '  • /reset 重置ChatGPT对话\n' +
+          '  • /reset_bing 重置BingChat对话\n' +
           '  • /usage 查看用量'
         );
         break;
@@ -66,6 +70,15 @@ class CommandHandler {
           '🔄 对话已重置。可开始新对话。'
         );
         logWithTime(`🔄 Chat thread reset by ${userInfo}.`);
+        break;
+      case '/reset_bing':
+        await this._bot.sendChatAction(msg.chat.id, 'typing');
+        await this._bingApi.resetThread();
+        await this._bot.sendMessage(
+          msg.chat.id,
+          '🔄 BingChat已重置。可开始新对话。'
+        );
+        logWithTime(`🔄 BingChat thread reset by ${userInfo}.`);
         break;
 
       case '/usage':
