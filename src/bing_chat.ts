@@ -4,18 +4,13 @@ import {
 } from './types';
 import { logWithTime } from './utils';
 
-interface ChatContext {
-  conversationId?: string;
-  parentMessageId?: string;
-}
-
 class BingChatApi {
   debug: number;
   protected _opts: BingChatOptions;
   protected _api:
     | BingChat
     | undefined;
-  protected _context: ChatContext = {};
+  protected _context: ChatMessage = {} as ChatMessage;
   protected _timeoutMs: number | undefined;
 
   constructor(apiOpts: BingChatOptions, debug = 1) {
@@ -45,18 +40,13 @@ class BingChatApi {
       onProgress,
     });
 
-    const parentMessageId = (res as ChatMessage).id;
-
-    this._context = {
-      conversationId: res.conversationId,
-      parentMessageId: parentMessageId,
-    };
+    this._context = res;
 
     return res;
   };
 
   resetThread = async () => {
-    this._context = {};
+    this._context = {} as ChatMessage;
   };
 }
 
