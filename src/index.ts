@@ -1,7 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
-import { ChatGPT } from './api';
-import { BingChatApi } from './bing_chat';
-import { MessageHandler } from './handlers/message';
+import { ChatGPT } from './chatgpt_api';
+import { BingChatApi } from './bingchat_api';
+import { MessageHandler } from './handlers/message_handler';
 import { loadConfig } from './utils';
 
 async function main() {

@@ -1,14 +1,14 @@
 import { JSONFile, Low } from 'lowdb';
 import type TelegramBot from 'node-telegram-bot-api';
 import { join } from 'path';
-import type { ChatGPT } from '../api';
-import { BingChatApi } from '../bing_chat';
+import type { ChatGPT } from '../chatgpt_api';
+import { BingChatApi } from '../bingchat_api';
 import { BotOptions, UsageData } from '../types';
 import { logWithTime } from '../utils';
 import { Authenticator } from './authentication';
-import { BingChatHandler } from './bing';
-import { ChatHandler } from './chat';
-import { CommandHandler } from './command';
+import { BingChatHandler } from './bingchat_handler';
+import { ChatHandler } from './chatgpt_handler';
+import { CommandHandler } from './command_handler';
 
 class MessageHandler {
   debug: number;

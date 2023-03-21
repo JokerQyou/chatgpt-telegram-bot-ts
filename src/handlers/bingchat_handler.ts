@@ -1,39 +1,31 @@
-import type { ChatMessage as ChatResponseV4 } from 'chatgpt';
-import _, { chain } from 'lodash';
+import _ from 'lodash';
 import type TelegramBot from 'node-telegram-bot-api';
 import telegramifyMarkdown from 'telegramify-markdown';
-import type { ChatGPT } from '../api';
-import { BotOptions, UsageData } from '../types';
+import { BotOptions } from '../types';
 import { logWithTime } from '../utils';
 import Queue from 'promise-queue';
-import { JSONFile, Low } from 'lowdb';
-import { encoding_for_model, Tiktoken } from '@dqbd/tiktoken';
-import { join } from 'path';
+import { ChatMessage } from 'bing-chat';
+import { BingChatApi } from '../bingchat_api';
 
-class ChatHandler {
+class BingChatHandler {
   debug: number;
   protected _opts: BotOptions;
   protected _bot: TelegramBot;
-  protected _api: ChatGPT;
+  protected _api: BingChatApi;
   protected _n_queued = 0;
   protected _n_pending = 0;
   protected _apiRequestsQueue = new Queue(1, Infinity);
   protected _positionInQueue: Record<string, number> = {};
   protected _updatePositionQueue = new Queue(20, Infinity);
-  protected _enc: Tiktoken;
-  protected _db?: Low<UsageData>;
 
-  constructor(bot: TelegramBot, api: ChatGPT, botOpts: BotOptions, debug = 1) {
+  constructor(bot: TelegramBot, api: BingChatApi, botOpts: BotOptions, debug = 1) {
     this.debug = debug;
     this._bot = bot;
     this._api = api;
     this._opts = botOpts;
-    this._enc = encoding_for_model('gpt-3.5-turbo');
   }
 
-  init = async (db: Low<UsageData>) => {
-    this._db = db;
-  }
+  init = async () => { }
 
   handle = async (msg: TelegramBot.Message, text: string) => {
     if (!text) return;
@@ -55,7 +47,7 @@ class ChatHandler {
 
     // add to sequence queue due to chatGPT processes only one request at a time
     const requestPromise = this._apiRequestsQueue.add(() => {
-      return this._sendToGpt(text, chatId, reply);
+      return this._sendToBingChat(text, chatId, reply);
     });
     if (this._n_pending == 0) this._n_pending++;
     else this._n_queued++;
@@ -72,7 +64,7 @@ class ChatHandler {
     await requestPromise;
   };
 
-  protected _sendToGpt = async (
+  protected _sendToBingChat = async (
     text: string,
     chatId: number,
     originalReply: TelegramBot.Message
@@ -85,8 +77,8 @@ class ChatHandler {
       const res = await this._api.sendMessage(
         text,
         _.throttle(
-          async (partialResponse: ChatResponseV4) => {
-            const resText = (partialResponse as ChatResponseV4).text;
+          async (partialResponse: ChatMessage) => {
+            const resText = (partialResponse as ChatMessage).text;
             reply = await this._editMessage(reply, resText);
             await this._bot.sendChatAction(chatId, 'typing');
           },
@@ -94,50 +86,15 @@ class ChatHandler {
           { leading: true, trailing: false }
         )
       );
-      const resText = (res as ChatResponseV4).text;
-
-      let tokenCount = 0;
-      tokenCount += this._enc.encode(text, 'all').length;
-      tokenCount += this._enc.encode(resText, 'all').length;
-      const now = new Date();
-      // Store token count
-      if (!(chatId in this._db!.data!)) {
-        this._db!.data![chatId] = {
-          chatgpt: {
-            updated: now.getTime() / 1000.0,
-            dailyTokens: tokenCount,
-            monthlyTokens: tokenCount,
-            totalTokens: tokenCount,
-          }
-        }
-      } else {
-        const updated = new Date((this._db!.data![chatId].chatgpt.updated || 0) * 1000.0);
-        // same day
-        if (updated.getUTCMonth() === now.getUTCMonth() && updated.getUTCDate() === now.getUTCDate()) {
-          this._db!.data![chatId].chatgpt.dailyTokens += tokenCount;
-          this._db!.data![chatId].chatgpt.monthlyTokens += tokenCount;
-        } else {
-          this._db!.data![chatId].chatgpt.dailyTokens = tokenCount;
-          // next day
-          if (updated.getUTCMonth() === now.getUTCMonth()) {
-            this._db!.data![chatId].chatgpt.monthlyTokens += tokenCount;
-          } else { // next month
-            this._db!.data![chatId].chatgpt.monthlyTokens = tokenCount;
-          }
-        }
-        this._db!.data![chatId].chatgpt.totalTokens += tokenCount;
-        this._db!.data![chatId].chatgpt.updated = now.getTime() / 1000.0;
-      }
-      await this._db!.write()
-
+      const resText = (res as ChatMessage).text;
       await this._editMessage(reply, resText);
 
       if (this.debug >= 1) logWithTime(`📨 Response:\n${resText}`);
     } catch (err) {
-      logWithTime('⛔️ ChatGPT API error:', (err as Error).message);
+      logWithTime('⛔️ BingChat API error:', (err as Error).message);
       this._bot.sendMessage(
         chatId,
-        "⚠️ ChatGPT 接口错误，请稍后重试。"
+        "⚠️ BingChat 接口错误，请稍后重试。"
       );
     }
 
@@ -209,4 +166,4 @@ class ChatHandler {
   };
 }
 
-export { ChatHandler };
+export { BingChatHandler };

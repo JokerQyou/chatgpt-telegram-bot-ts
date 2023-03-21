@@ -1,7 +1,7 @@
 import { Low } from 'lowdb/lib';
 import type TelegramBot from 'node-telegram-bot-api';
-import type { ChatGPT } from '../api';
-import { BingChatApi } from '../bing_chat';
+import type { ChatGPT } from '../chatgpt_api';
+import { BingChatApi } from '../bingchat_api';
 import { BotOptions, UsageData } from '../types';
 import { logWithTime } from '../utils';
 
