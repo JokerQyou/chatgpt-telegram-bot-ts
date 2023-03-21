@@ -85,23 +85,27 @@ class CommandHandler {
         const price = 0.002; // per 1000 tokens
         const pricingUnit = 1000; // 1000 tokens
         const chatId = msg.chat.id;
-        const dailyTokens = this._db?.data![chatId].chatgpt.dailyTokens;
-        const monthlyTokens = this._db?.data![chatId].chatgpt.monthlyTokens;
-        const totalTokens = this._db?.data![chatId].chatgpt.totalTokens;
-        await this._bot.sendMessage(
-          msg.chat.id,
-          `今日:\n` +
-          `使用了 ${dailyTokens} 文本 token\n` +
-          `💰花费 $${((dailyTokens || 0) * price / pricingUnit).toFixed(2)}\n` +
-          `\n------------\n\n` +
-          `本月:\n` +
-          `使用了 ${monthlyTokens} 文本 token\n` +
-          `💰花费 $${((monthlyTokens || 0) * price / pricingUnit).toFixed(2)}\n` +
-          `\n------------\n\n` +
-          `累计:\n` +
-          `使用了 ${totalTokens} 文本 token\n` +
-          `💰花费 $${((totalTokens || 0) * price / pricingUnit).toFixed(2)}`,
-        )
+        const dailyTokens = this._db?.data?.[chatId]?.chatgpt?.dailyTokens || 0;
+        const monthlyTokens = this._db?.data?.[chatId]?.chatgpt?.monthlyTokens || 0;
+        const totalTokens = this._db?.data?.[chatId]?.chatgpt?.totalTokens || 0;
+        if (dailyTokens > 0 || monthlyTokens > 0 || totalTokens > 0) {
+          await this._bot.sendMessage(
+            msg.chat.id,
+            `今日:\n` +
+            `使用了 ${dailyTokens} 文本 token\n` +
+            `💰花费 $${((dailyTokens || 0) * price / pricingUnit).toFixed(2)}\n` +
+            `\n------------\n\n` +
+            `本月:\n` +
+            `使用了 ${monthlyTokens} 文本 token\n` +
+            `💰花费 $${((monthlyTokens || 0) * price / pricingUnit).toFixed(2)}\n` +
+            `\n------------\n\n` +
+            `累计:\n` +
+            `使用了 ${totalTokens} 文本 token\n` +
+            `💰花费 $${((totalTokens || 0) * price / pricingUnit).toFixed(2)}`,
+          )
+        } else {
+          await this._bot.sendMessage(chatId, `暂无用量信息`)
+        }
         break;
 
       default:
